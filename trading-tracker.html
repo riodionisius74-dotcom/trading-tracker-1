@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandRed: '#DB1A1A',
+                        brandCream: '#FFFDEB',
+                        brandGold: '#E8DBB3',
+                        brandBlue: '#7DAACB',
+                        profitGreen: '#16a34a'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FFFDEB;
+        }
+        .bg-gold-header {
+            background-color: #E8DBB3;
+        }
+    </style>
+</head>
+<body class="bg-brandCream font-sans text-gray-800 min-h-screen flex flex-col">
+
+    <!-- Login / Register Overlay Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-100">
+
+            <!-- LANDING CHOICE SCREEN -->
+            <div id="landing-choice">
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-brandBlue/20 text-brandBlue rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">Trading Tracker</h2>
+                    <p class="text-sm text-gray-500 mt-1">Selamat datang! Silakan pilih salah satu opsi di bawah ini.</p>
+                </div>
+                <div class="space-y-3">
+                    <button type="button" onclick="showAuthForm('login')" class="w-full bg-brandBlue text-white font-semibold py-3 rounded-lg hover:bg-sky-600 transition duration-200 shadow-md flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-right-to-bracket"></i> Login
+                    </button>
+                    <button type="button" onclick="showAuthForm('register')" class="w-full bg-white text-brandBlue font-semibold py-3 rounded-lg border-2 border-brandBlue hover:bg-brandBlue/10 transition duration-200 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-user-plus"></i> Buat Akun Baru
+                    </button>
+                </div>
+            </div>
+
+            <!-- AUTH FORM (login or register) -->
+            <div id="auth-form-wrapper" class="hidden">
+                <button type="button" onclick="backToLanding()" class="text-xs font-semibold text-gray-400 hover:text-brandBlue mb-4 flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-left"></i> Kembali
+                </button>
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-brandBlue/20 text-brandBlue rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800" id="auth-title">Login</h2>
+                    <p class="text-sm text-gray-500 mt-1" id="auth-subtitle">Silakan login untuk mengakses jurnal trading Anda</p>
+                </div>
+
+                <form id="auth-form" onsubmit="handleAuth(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Username</label>
+                        <input type="text" id="login-username" required placeholder="Ketik username Anda..." class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-brandBlue text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Password</label>
+                        <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-brandBlue text-sm">
+                    </div>
+                    <div id="login-error" class="hidden text-xs text-brandRed font-medium text-center"></div>
+                    <button type="submit" id="auth-submit-btn" class="w-full bg-brandBlue text-white font-semibold py-3 rounded-lg hover:bg-sky-600 transition duration-200 shadow-md">
+                        Masuk ke Sistem
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-sm border-b border-gray-200 p-4 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-brandBlue text-white rounded-lg shadow-sm">
+                    <i class="fa-solid fa-chart-line text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800 leading-tight">Trading Tracker</h1>
+                    <span class="text-xs text-gray-500 font-medium">Pengguna: <strong id="current-user-display" class="text-brandBlue font-semibold">Memuat...</strong></span>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="flex items-center space-x-2 bg-gray-100 p-1 rounded-xl">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-5 py-2 font-semibold text-sm rounded-lg bg-brandBlue text-white transition shadow-sm">
+                    <i class="fa-solid fa-chart-pie mr-1.5"></i> Dashboard
+                </button>
+                <button onclick="switchTab('journal')" id="tab-journal" class="px-5 py-2 font-semibold text-sm rounded-lg text-gray-600 hover:text-brandBlue transition">
+                    <i class="fa-solid fa-book-journal-whills mr-1.5"></i> Jurnal Trade
+                </button>
+                <button onclick="switchTab('funding')" id="tab-funding" class="px-5 py-2 font-semibold text-sm rounded-lg text-gray-600 hover:text-brandBlue transition">
+                    <i class="fa-solid fa-wallet mr-1.5"></i> Riwayat Dana
+                </button>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex items-center space-x-2">
+                <button onclick="openFundingModal('Deposit')" class="bg-emerald-500 text-white px-3 py-2 rounded-lg font-semibold text-sm hover:bg-emerald-600 transition flex items-center gap-2 shadow-sm" title="Deposit Dana">
+                    <i class="fa-solid fa-arrow-down"></i> <span class="hidden md:inline">Deposit</span>
+                </button>
+                <button onclick="openFundingModal('Withdraw')" class="bg-brandRed text-white px-3 py-2 rounded-lg font-semibold text-sm hover:bg-red-700 transition flex items-center gap-2 shadow-sm" title="Tarik Dana">
+                    <i class="fa-solid fa-arrow-up"></i> <span class="hidden md:inline">Withdraw</span>
+                </button>
+                <div class="w-px h-6 bg-gray-300 mx-1 hidden sm:block"></div>
+                <button onclick="openModal()" class="bg-brandBlue text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-sky-600 transition flex items-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Trade Baru</span>
+                </button>
+                <button onclick="handleLogout()" class="text-gray-500 hover:text-brandRed p-2 rounded-lg transition" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl mx-auto w-full p-4 sm:p-6 space-y-6">
+
+        <!-- DASHBOARD VIEW -->
+        <div id="view-dashboard" class="space-y-6">
+
+            <!-- Filter Bar & Banner Header -->
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-gray-200/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Tanggal Hari Ini</div>
+                    <div id="current-date-display" class="text-base font-bold text-gray-800"></div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-semibold text-gray-500">Periode:</label>
+                        <select id="period-filter" onchange="updateDashboard()" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brandBlue bg-white">
+                            <option value="all">Semua Waktu</option>
+                            <option value="daily">Harian</option>
+                            <option value="weekly">Mingguan</option>
+                            <option value="monthly" selected>Bulanan</option>
+                        </select>
+                    </div>
+
+                    <button onclick="exportToSheets()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-file-excel"></i> Export to Sheets
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic Cashflow Log Banner -->
+            <div id="cashflow-banner" class="p-4 sm:p-5 rounded-2xl shadow-sm text-white font-semibold flex items-center justify-between border">
+                <!-- Populated dynamically -->
+            </div>
+
+            <!-- Stats Grid 1 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200/80">
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Net PnL</div>
+                    <div id="stat-pnl" class="text-2xl font-extrabold text-gray-800">$0.00</div>
+                    <div class="text-[11px] text-gray-400 mt-1">Keuntungan Bersih (Profit - Fee)</div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200/80">
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Win Rate</div>
+                    <div id="stat-winrate" class="text-2xl font-extrabold text-gray-800">0%</div>
+                    <div class="text-[11px] text-gray-400 mt-1">Persentase Kemenangan</div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200/80">
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Trades</div>
+                    <div id="stat-trades" class="text-2xl font-extrabold text-gray-800">0</div>
+                    <div class="text-[11px] text-gray-400 mt-1">Jumlah Transaksi Selesai</div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200/80">
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Fees Paid</div>
+                    <div id="stat-fees" class="text-2xl font-extrabold text-gray-800">$0.00</div>
+                    <div class="text-[11px] text-gray-400 mt-1">Akumulasi Biaya Transaksi</div>
+                </div>
+            </div>
+
+            <!-- Stats Grid 2: Performance Analytics -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200/80">
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Gross Profit</div>
+                    <div id="stat-gross-profit" class="text-2xl font-extrabold text-profitGreen">$0.00</div>
+                    <div class="text-[11px] text-gray-400 mt-1">Total Profit tanpa Mengurangi Loss</div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200/80">
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Gross Loss</div>
+                    <div id="stat-gross-loss" class="text-2xl font-extrabold text-brandRed">$0.00</div>
+                    <div class="text-[11px] text-gray-400 mt-1">Total Kerugian Bersih</div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200/80">
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Profit Factor</div>
+                    <div id="stat-profit-factor" class="text-2xl font-extrabold text-gray-800">0.00</div>
+                    <div class="text-[11px] text-gray-400 mt-1">Rasio Gross Profit vs Gross Loss</div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200/80">
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Sharpe Ratio</div>
+                    <div id="stat-sharpe-ratio" class="text-2xl font-extrabold text-gray-800">0.00</div>
+                    <div class="text-[11px] text-gray-400 mt-1">Pengukuran Performa Risiko Trade</div>
+                </div>
+            </div>
+
+            <!-- Charts Container -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- Equity Chart -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200/80">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-emerald-600"></i> Grafik Equity ($)
+                        </h3>
+                        <span class="text-xs font-medium text-gray-400">Total Modal + PnL</span>
+                    </div>
+                    <div class="w-full h-72 relative">
+                        <canvas id="equityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- PnL Chart -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200/80">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-area text-brandBlue"></i> Grafik Kumulatif PnL ($)
+                        </h3>
+                        <span class="text-xs font-medium text-gray-400">Pertumbuhan Profit Murni</span>
+                    </div>
+                    <div class="w-full h-72 relative">
+                        <canvas id="pnlChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PnL Breakdown Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200/80">
+                    <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-coins text-brandBlue"></i> PnL berdasarkan Pair Aset
+                    </h3>
+                    <div id="pnl-by-asset" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                        <!-- Dynamic list -->
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200/80">
+                    <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-chess-knight text-brandBlue"></i> PnL berdasarkan Strategi
+                    </h3>
+                    <div id="pnl-by-strategy" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                        <!-- Dynamic list -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- JOURNAL VIEW -->
+        <div id="view-journal" class="hidden space-y-4">
+
+            <!-- Filters & Actions -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200/80 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <select id="filter-market" onchange="renderTable()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brandBlue bg-white">
+                        <option value="All">Semua Pasar</option>
+                        <option value="Crypto">Crypto</option>
+                        <option value="Stock">Stock</option>
+                        <option value="Forex">Forex</option>
+                        <option value="Commodities">Commodities</option>
+                    </select>
+
+                    <select id="filter-position" onchange="renderTable()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brandBlue bg-white">
+                        <option value="All">Semua Posisi</option>
+                        <option value="Long">Long / Buy</option>
+                        <option value="Short">Short / Sell</option>
+                    </select>
+
+                    <input type="text" id="search-input" onkeyup="renderTable()" placeholder="Cari Aset / ID / Strategi..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brandBlue w-full sm:w-64">
+                </div>
+
+                <button onclick="openModal()" class="w-full sm:w-auto bg-brandBlue text-white px-5 py-2 rounded-lg font-semibold text-sm hover:bg-sky-600 transition flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-plus"></i> Tambah Trade Baru
+                </button>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200/80 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[750px]">
+                        <thead>
+                            <tr class="bg-gold-header text-gray-800 border-b border-gray-300/50">
+                                <th class="py-3 px-4 text-xs font-bold uppercase">ID</th>
+                                <th class="py-3 px-4 text-xs font-bold uppercase">Aset</th>
+                                <th class="py-3 px-4 text-xs font-bold uppercase">Strategi</th>
+                                <th class="py-3 px-4 text-xs font-bold uppercase">Pasar</th>
+                                <th class="py-3 px-4 text-xs font-bold uppercase">Tipe</th>
+                                <th class="py-3 px-4 text-xs font-bold uppercase">Qty / Date</th>
+                                <th class="py-3 px-4 text-xs font-bold uppercase">Fee ($)</th>
+                                <th class="py-3 px-4 text-xs font-bold uppercase text-right">Net PnL ($)</th>
+                                <th class="py-3 px-4 text-xs font-bold uppercase text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="journal-tbody">
+                            <!-- Dynamic Table Rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-state" class="hidden flex-col items-center justify-center py-12 text-gray-400">
+                    <i class="fa-solid fa-folder-open text-4xl mb-3 text-gray-300"></i>
+                    <p class="text-sm font-medium">Belum ada catatan trade. Klik "Tambah Trade Baru" untuk memulai!</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- FUNDING VIEW -->
+        <div id="view-funding" class="hidden space-y-4">
+            <!-- Headers & Action -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200/80 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <h2 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-wallet text-brandBlue"></i> Riwayat Deposit & Withdraw
+                </h2>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="openFundingModal('Deposit')" class="w-full sm:w-auto bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-emerald-600 transition shadow-sm">
+                        <i class="fa-solid fa-arrow-down mr-1"></i> Deposit Baru
+                    </button>
+                    <button onclick="openFundingModal('Withdraw')" class="w-full sm:w-auto bg-brandRed text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-red-700 transition shadow-sm">
+                        <i class="fa-solid fa-arrow-up mr-1"></i> Withdraw Baru
+                    </button>
+                </div>
+            </div>
+
+            <!-- Funding Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200/80 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[600px]">
+                        <thead>
+                            <tr class="bg-gold-header text-gray-800 border-b border-gray-300/50">
+                                <th class="py-3 px-4 text-xs font-bold uppercase">ID Trx</th>
+                                <th class="py-3 px-4 text-xs font-bold uppercase">Tanggal</th>
+                                <th class="py-3 px-4 text-xs font-bold uppercase">Tipe</th>
+                                <th class="py-3 px-4 text-xs font-bold uppercase text-right">Jumlah ($)</th>
+                                <th class="py-3 px-4 text-xs font-bold uppercase text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="funding-tbody">
+                            <!-- Dynamic Table Rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State Funding -->
+                <div id="funding-empty-state" class="hidden flex-col items-center justify-center py-12 text-gray-400">
+                    <i class="fa-solid fa-money-bill-transfer text-4xl mb-3 text-gray-300"></i>
+                    <p class="text-sm font-medium">Belum ada riwayat dana untuk akun ini.</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Floating Action Button for Mobile -->
+    <button onclick="openModal()" class="fixed bottom-6 right-6 w-14 h-14 bg-brandBlue text-white rounded-full shadow-xl flex items-center justify-center text-xl hover:bg-sky-600 transition z-40" title="Tambah Trade Baru">
+        <i class="fa-solid fa-plus"></i>
+    </button>
+
+    <!-- Modal Input Trade -->
+    <div id="trade-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <h2 id="modal-title" class="text-base font-bold text-gray-800">Tambah Trade Baru</h2>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-700 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-4">
+                <form id="trade-form" onsubmit="saveTrade(event)" class="space-y-4">
+                    <input type="hidden" id="trade-id">
+
+                    <!-- Grid Controls -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Asset Name Dropdown -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nama Aset</label>
+                            <select id="asset-name" onchange="autoSelectMarket()" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brandBlue bg-white">
+                                <option value="BTCUSDc">BTCUSDc</option>
+                                <option value="BTCUSDTc">BTCUSDTc</option>
+                                <option value="EURNZDc">EURNZDc</option>
+                                <option value="USDCADc">USDCADc</option>
+                                <option value="USDJPYc">USDJPYc</option>
+                                <option value="ETHUSDc">ETHUSDc</option>
+                                <option value="EURJPYc">EURJPYc</option>
+                                <option value="USDCHFc">USDCHFc</option>
+                                <option value="EURCHFc">EURCHFc</option>
+                                <option value="AUDCADc">AUDCADc</option>
+                                <option value="GBPUSDc">GBPUSDc</option>
+                                <option value="EURUSDc" selected>EURUSDc</option>
+                                <option value="EURGBPc">EURGBPc</option>
+                                <option value="XAUUSDc">XAUUSDc</option>
+                            </select>
+                        </div>
+
+                        <!-- Market Category -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Kategori Pasar</label>
+                            <select id="market-category" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brandBlue bg-white">
+                                <option value="Crypto">Crypto</option>
+                                <option value="Stock">Stock</option>
+                                <option value="Forex" selected>Forex</option>
+                                <option value="Commodities">Commodities</option>
+                            </select>
+                        </div>
+
+                        <!-- Strategy -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Strategi</label>
+                            <input type="text" id="trade-strategy" placeholder="misal: Breakout, SND, Scalping" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brandBlue">
+                        </div>
+
+                        <!-- Position Type -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Tipe Posisi</label>
+                            <select id="position-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brandBlue bg-white">
+                                <option value="Long">Buy / Long</option>
+                                <option value="Short">Sell / Short</option>
+                            </select>
+                        </div>
+
+                        <!-- Quantity -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Kuantitas / Lot</label>
+                            <input type="number" id="trade-qty" step="any" placeholder="0.1" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brandBlue">
+                        </div>
+
+                        <!-- Date -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Tanggal & Waktu</label>
+                            <input type="datetime-local" id="trade-date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brandBlue">
+                        </div>
+                    </div>
+
+                    <!-- Profit & Fee Section -->
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">
+                                Profit / Loss <span class="text-xs text-gray-400 font-normal">(Gunakan '-' untuk Rugi)</span>
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="number" id="trade-profit" step="any" placeholder="Contoh: 12.50 atau -5.00" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brandBlue bg-white">
+                                <select id="profit-unit" class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-brandBlue">
+                                    <option value="USD">USD ($)</option>
+                                    <option value="USC">USC (Cent)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Trading Fee ($)</label>
+                            <input type="number" id="trade-fee" step="any" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brandBlue bg-white">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-2">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">Batal</button>
+                        <button type="submit" class="px-5 py-2 bg-brandBlue text-white rounded-lg text-sm font-semibold hover:bg-sky-600 transition shadow-sm">Simpan Trade</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Input Funding (Deposit/Withdraw) -->
+    <div id="funding-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <h2 id="funding-modal-title" class="text-base font-bold text-gray-800">Deposit Dana</h2>
+                <button onclick="closeFundingModal()" class="text-gray-400 hover:text-gray-700 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <form id="funding-form" onsubmit="saveFunding(event)" class="space-y-4">
+                    <input type="hidden" id="funding-type">
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Jumlah Dana</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="funding-amount" step="any" placeholder="Contoh: 600" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brandBlue bg-white">
+                            <select id="funding-unit" class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-brandBlue">
+                                <option value="USD">USD ($)</option>
+                                <option value="USC">USC (Cent)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Tanggal & Waktu Transaksi</label>
+                        <input type="datetime-local" id="funding-date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brandBlue">
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-2">
+                        <button type="button" onclick="closeFundingModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">Batal</button>
+                        <button type="submit" id="funding-submit-btn" class="px-5 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition shadow-sm">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Toast -->
+    <div id="toast" class="fixed bottom-6 left-6 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-2xl opacity-0 pointer-events-none transition-opacity duration-300 z-50 flex items-center gap-3">
+        <i class="fa-solid fa-circle-check text-profitGreen text-lg"></i>
+        <span id="toast-msg" class="text-sm font-medium"></span>
+    </div>
+
+    <script>
+        // TODO: Ganti dengan URL Web App Apps Script Anda (setelah deploy backend.gs)
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhBzAFA_E0Xh2dyyQHpXAPIAhYx1U0liE0HL_hAhjY_i4GN-cUUBDXq72-1ab1iA2-/exec';
+
+        let trades = [];
+        try {
+            const savedData = localStorage.getItem('trading_data');
+            if (savedData) {
+                trades = JSON.parse(savedData);
+            }
+        } catch (e) {
+            console.error("Local storage error:", e);
+            trades = [];
+        }
+
+        let fundings = [];
+        try {
+            const savedFundings = localStorage.getItem('funding_data');
+            if (savedFundings) {
+                fundings = JSON.parse(savedFundings);
+            }
+        } catch (e) {
+            console.error("Funding storage error:", e);
+            fundings = [];
+        }
+
+        let pnlChartInstance = null;
+        let equityChartInstance = null;
+
+        let currentUser = sessionStorage.getItem('currentUser') || '';
+        let authMode = 'login'; // 'login' or 'register'
+
+        const formatCurrency = (val) => {
+            if (val === null || isNaN(val)) return '-';
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+        };
+
+        const generateID = () => 'TRD-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+
+        const formatDateFull = (dateObj) => {
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+            const dayName = days[dateObj.getDay()];
+            const dayNum = dateObj.getDate();
+            const monthName = months[dateObj.getMonth()];
+            const year = dateObj.getFullYear();
+
+            return `${dayName}, ${dayNum} ${monthName} ${year}`;
+        };
+
+        // ---------- AUTH: LANDING / LOGIN / REGISTER ----------
+
+        function checkAuth() {
+            const loggedIn = sessionStorage.getItem('isLoggedIn');
+            const loginModal = document.getElementById('login-modal');
+            if (loggedIn === 'true' && currentUser) {
+                loginModal.classList.add('hidden');
+                document.getElementById('current-user-display').innerText = currentUser;
+            } else {
+                loginModal.classList.remove('hidden');
+                document.getElementById('landing-choice').classList.remove('hidden');
+                document.getElementById('auth-form-wrapper').classList.add('hidden');
+            }
+        }
+
+        function showAuthForm(mode) {
+            authMode = mode;
+            document.getElementById('landing-choice').classList.add('hidden');
+            document.getElementById('auth-form-wrapper').classList.remove('hidden');
+            document.getElementById('auth-title').innerText = mode === 'login' ? 'Login' : 'Buat Akun Baru';
+            document.getElementById('auth-subtitle').innerText = mode === 'login'
+                ? 'Silakan login untuk mengakses jurnal trading Anda'
+                : 'Daftarkan username dan password baru Anda';
+            document.getElementById('auth-submit-btn').innerText = mode === 'login' ? 'Masuk ke Sistem' : 'Daftar & Mulai';
+            document.getElementById('login-error').classList.add('hidden');
+            document.getElementById('auth-form').reset();
+        }
+
+        function backToLanding() {
+            document.getElementById('auth-form-wrapper').classList.add('hidden');
+            document.getElementById('landing-choice').classList.remove('hidden');
+            document.getElementById('login-error').classList.add('hidden');
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const u = document.getElementById('login-username').value.trim();
+            const p = document.getElementById('login-password').value;
+            const err = document.getElementById('login-error');
+            const btn = document.getElementById('auth-submit-btn');
+            err.classList.add('hidden');
+
+            if (!GOOGLE_SCRIPT_URL || !GOOGLE_SCRIPT_URL.startsWith('http')) {
+                err.innerText = 'Backend belum dikonfigurasi. Hubungi admin.';
+                err.classList.remove('hidden');
+                return;
+            }
+
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = authMode === 'login' ? 'Memproses login...' : 'Membuat akun...';
+
+            try {
+                const res = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: authMode, username: u, password: p })
+                });
+                const json = await res.json();
+
+                if (json.status === 'success') {
+                    await processLoginSuccess(u, authMode === 'register');
+                } else {
+                    err.innerText = json.message || 'Terjadi kesalahan. Coba lagi.';
+                    err.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Auth error:', error);
+                err.innerText = 'Gagal terhubung ke server. Periksa koneksi Anda.';
+                err.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+
+        async function processLoginSuccess(username, isNew = false) {
+            sessionStorage.setItem('isLoggedIn', 'true');
+            sessionStorage.setItem('currentUser', username);
+            currentUser = username;
+
+            document.getElementById('current-user-display').innerText = username;
+            document.getElementById('login-modal').classList.add('hidden');
+            document.getElementById('login-error').classList.add('hidden');
+
+            showMessage(isNew ? `Akun berhasil dibuat! Selamat datang ${username}` : `Login berhasil! Selamat datang ${username}`);
+
+            renderTable();
+            updateDashboard();
+            renderFundingTable();
+
+            await syncUserData();
+
+            renderTable();
+            updateDashboard();
+            renderFundingTable();
+        }
+
+        function handleLogout() {
+            sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('currentUser');
+            currentUser = '';
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+            checkAuth();
+        }
+
+        // Pulls this user's trades/fundings from the Apps Script backend
+        // and merges them into the local cache (other users' cached data untouched).
+        async function syncUserData() {
+            if (!GOOGLE_SCRIPT_URL || !GOOGLE_SCRIPT_URL.startsWith('http') || !currentUser) return;
+            try {
+                showMessage('Menyinkronkan data Anda...');
+                const [tradesRes, fundingsRes] = await Promise.all([
+                    fetch(`${GOOGLE_SCRIPT_URL}?action=getTrades&username=${encodeURIComponent(currentUser)}`).then(r => r.json()),
+                    fetch(`${GOOGLE_SCRIPT_URL}?action=getFundings&username=${encodeURIComponent(currentUser)}`).then(r => r.json())
+                ]);
+
+                if (tradesRes.status === 'success') {
+                    trades = trades.filter(t => (t.username || 'rio123') !== currentUser).concat(tradesRes.data || []);
+                    trades.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    localStorage.setItem('trading_data', JSON.stringify(trades));
+                }
+                if (fundingsRes.status === 'success') {
+                    fundings = fundings.filter(f => (f.username || 'rio123') !== currentUser).concat(fundingsRes.data || []);
+                    localStorage.setItem('funding_data', JSON.stringify(fundings));
+                }
+                showMessage('Data berhasil disinkronkan!');
+            } catch (error) {
+                console.error('Sync error:', error);
+                showMessage('Gagal sinkronisasi, memakai data lokal sementara.');
+            }
+        }
+
+        // ---------- TRADE FORM ----------
+
+        function autoSelectMarket() {
+            const asset = document.getElementById('asset-name').value;
+            const marketSelect = document.getElementById('market-category');
+
+            if (asset.startsWith('BTC') || asset.startsWith('ETH')) {
+                marketSelect.value = 'Crypto';
+            } else if (asset === 'XAUUSDc') {
+                marketSelect.value = 'Commodities';
+            } else {
+                marketSelect.value = 'Forex';
+            }
+        }
+
+        function showMessage(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('opacity-0');
+            setTimeout(() => toast.classList.add('opacity-0'), 3000);
+        }
+
+        function switchTab(tab) {
+            const tabs = ['dashboard', 'journal', 'funding'];
+
+            tabs.forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                const btn = document.getElementById(`tab-${t}`);
+
+                if (t === tab) {
+                    view.classList.remove('hidden');
+                    btn.className = "px-5 py-2 font-semibold text-sm rounded-lg bg-brandBlue text-white transition shadow-sm";
+                } else {
+                    view.classList.add('hidden');
+                    btn.className = "px-5 py-2 font-semibold text-sm rounded-lg text-gray-600 hover:text-brandBlue transition";
+                }
+            });
+
+            if (tab === 'dashboard') updateDashboard();
+            if (tab === 'journal') renderTable();
+            if (tab === 'funding') renderFundingTable();
+        }
+
+        function saveTrade(e) {
+            e.preventDefault();
+
+            const idInput = document.getElementById('trade-id').value;
+            const dateInput = document.getElementById('trade-date').value;
+
+            const assetVal = document.getElementById('asset-name').value;
+            const marketVal = document.getElementById('market-category').value;
+            const strategyVal = document.getElementById('trade-strategy').value;
+            const typeVal = document.getElementById('position-type').value;
+            const qtyVal = parseFloat(document.getElementById('trade-qty').value);
+
+            const rawProfit = parseFloat(document.getElementById('trade-profit').value || 0);
+            const unitVal = document.getElementById('profit-unit').value;
+            const rawFee = parseFloat(document.getElementById('trade-fee').value || 0);
+
+            // Calculate profit in USD
+            const profitUSD = unitVal === 'USC' ? rawProfit / 100 : rawProfit;
+            const netPnLUSD = profitUSD - rawFee;
+
+            const tradeData = {
+                id: idInput || generateID(),
+                date: dateInput ? new Date(dateInput).toISOString() : new Date().toISOString(),
+                asset: assetVal,
+                market: marketVal,
+                strategy: strategyVal || 'No Strategy',
+                type: typeVal,
+                qty: qtyVal,
+                rawProfit: rawProfit,
+                profitUnit: unitVal,
+                profitUSD: profitUSD,
+                fee: rawFee,
+                pnl: netPnLUSD,
+                status: 'Closed',
+                username: currentUser
+            };
+
+            if (idInput) {
+                const idx = trades.findIndex(t => t.id === idInput);
+                if (idx > -1) trades[idx] = tradeData;
+                showMessage('Menyimpan perubahan trade...');
+            } else {
+                trades.unshift(tradeData);
+                showMessage('Menyimpan trade baru...');
+            }
+
+            // Simpan cache lokal
+            localStorage.setItem('trading_data', JSON.stringify(trades));
+            closeModal();
+
+            // Panggil API Backend Google Sheets
+            if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith('http')) {
+                fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'addTrade', data: tradeData })
+                }).then(() => showMessage('Berhasil tersimpan ke Google Sheets!'))
+                  .catch(() => showMessage('Gagal menyimpan ke server.'));
+            }
+
+            // Reset filters
+            document.getElementById('filter-market').value = 'All';
+            document.getElementById('filter-position').value = 'All';
+            document.getElementById('search-input').value = '';
+
+            renderTable();
+            updateDashboard();
+        }
+
+        function deleteTrade(id) {
+            trades = trades.filter(t => t.id !== id);
+            localStorage.setItem('trading_data', JSON.stringify(trades));
+            renderTable();
+            updateDashboard();
+
+            if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith('http')) {
+                showMessage('Menghapus data dari server...');
+                fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'deleteTrade', id: id, username: currentUser })
+                }).then(() => showMessage('Data berhasil dihapus dari Google Sheets.'));
+            } else {
+                showMessage('Trade berhasil dihapus secara lokal.');
+            }
+        }
+
+        function openModal(id = null) {
+            const modal = document.getElementById('trade-modal');
+            const form = document.getElementById('trade-form');
+            form.reset();
+
+            document.getElementById('trade-id').value = '';
+            document.getElementById('modal-title').innerText = 'Tambah Trade Baru';
+
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('trade-date').value = now.toISOString().slice(0, 16);
+            document.getElementById('profit-unit').value = 'USD';
+            document.getElementById('trade-fee').value = '0';
+            autoSelectMarket();
+
+            if (id) {
+                const t = trades.find(item => item.id === id);
+                if (t) {
+                    document.getElementById('modal-title').innerText = 'Edit Trade';
+                    document.getElementById('trade-id').value = t.id;
+                    document.getElementById('asset-name').value = t.asset;
+                    document.getElementById('market-category').value = t.market;
+                    document.getElementById('trade-strategy').value = t.strategy === 'No Strategy' ? '' : t.strategy;
+                    document.getElementById('position-type').value = t.type;
+                    document.getElementById('trade-qty').value = t.qty;
+                    document.getElementById('trade-profit').value = t.rawProfit !== undefined ? t.rawProfit : t.pnl;
+                    document.getElementById('profit-unit').value = t.profitUnit || 'USD';
+                    document.getElementById('trade-fee').value = t.fee || 0;
+                    if (t.date) {
+                        const d = new Date(t.date);
+                        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                        document.getElementById('trade-date').value = d.toISOString().slice(0, 16);
+                    }
+                }
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('trade-modal').classList.add('hidden');
+        }
+
+        function openFundingModal(type) {
+            document.getElementById('funding-modal').classList.remove('hidden');
+            document.getElementById('funding-type').value = type;
+            document.getElementById('funding-modal-title').innerText = type === 'Deposit' ? 'Deposit Dana' : 'Tarik Dana (Withdraw)';
+
+            const btn = document.getElementById('funding-submit-btn');
+            btn.className = type === 'Deposit'
+                ? 'px-5 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition shadow-sm'
+                : 'px-5 py-2 bg-brandRed text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition shadow-sm';
+
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('funding-date').value = now.toISOString().slice(0, 16);
+            document.getElementById('funding-amount').value = '';
+            document.getElementById('funding-unit').value = 'USD';
+        }
+
+        function closeFundingModal() {
+            document.getElementById('funding-modal').classList.add('hidden');
+        }
+
+        function saveFunding(e) {
+            e.preventDefault();
+            const type = document.getElementById('funding-type').value;
+            const rawAmount = parseFloat(document.getElementById('funding-amount').value || 0);
+            const unit = document.getElementById('funding-unit').value;
+            const date = document.getElementById('funding-date').value;
+
+            const amountUSD = unit === 'USC' ? rawAmount / 100 : rawAmount;
+
+            const fundingData = {
+                id: 'FND-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
+                type: type,
+                amount: amountUSD,
+                date: date ? new Date(date).toISOString() : new Date().toISOString(),
+                username: currentUser
+            };
+
+            fundings.push(fundingData);
+
+            localStorage.setItem('funding_data', JSON.stringify(fundings));
+            closeFundingModal();
+            updateDashboard();
+            renderFundingTable();
+
+            if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith('http')) {
+                showMessage(`Menyimpan ${type} ke server...`);
+                fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'addFunding', data: fundingData })
+                }).then(() => showMessage(`${type} berhasil dicatat di Google Sheets!`));
+            } else {
+                showMessage(`${type} sebesar ${formatCurrency(amountUSD)} berhasil dicatat.`);
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('journal-tbody');
+            const emptyState = document.getElementById('empty-state');
+
+            const filterMarket = document.getElementById('filter-market').value;
+            const filterPos = document.getElementById('filter-position').value;
+            const searchQuery = document.getElementById('search-input').value.toLowerCase();
+
+            let userTrades = trades.filter(t => (t.username || 'rio123') === currentUser);
+
+            let filtered = userTrades.filter(t => {
+                const matchMarket = filterMarket === 'All' || t.market === filterMarket;
+                const matchPos = filterPos === 'All' || t.type === filterPos;
+                const matchSearch = (t.asset || '').toLowerCase().includes(searchQuery) ||
+                                    (t.id || '').toLowerCase().includes(searchQuery) ||
+                                    (t.strategy || '').toLowerCase().includes(searchQuery);
+                return matchMarket && matchPos && matchSearch;
+            });
+
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+
+                filtered.forEach(t => {
+                    const isProfit = t.pnl >= 0;
+                    const pnlColor = isProfit ? 'text-profitGreen' : 'text-brandRed';
+                    const pnlText = (isProfit ? '+' : '') + formatCurrency(t.pnl);
+                    const posColor = t.type === 'Long' ? 'text-emerald-600' : 'text-rose-600';
+                    const formattedDate = t.date ? new Date(t.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-amber-50/40 transition-colors border-b border-gray-100 last:border-0';
+                    row.innerHTML = `
+                        <td class="py-3 px-4 font-mono text-xs text-gray-500">${t.id}</td>
+                        <td class="py-3 px-4 font-bold text-gray-800">${t.asset}</td>
+                        <td class="py-3 px-4 text-gray-600 text-sm font-medium">${t.strategy}</td>
+                        <td class="py-3 px-4 text-gray-600 text-sm">${t.market}</td>
+                        <td class="py-3 px-4 font-semibold text-sm ${posColor}">${t.type}</td>
+                        <td class="py-3 px-4 text-sm whitespace-nowrap">
+                            <div class="text-xs font-medium text-gray-800">Qty: ${t.qty}</div>
+                            <div class="text-[11px] text-gray-400">${formattedDate}</div>
+                        </td>
+                        <td class="py-3 px-4 text-sm text-gray-600">${formatCurrency(t.fee || 0)}</td>
+                        <td class="py-3 px-4 text-right font-extrabold text-sm ${pnlColor}">${pnlText}</td>
+                        <td class="py-3 px-4 text-center">
+                            <button onclick="openModal('${t.id}')" class="text-brandBlue hover:text-sky-700 mr-3 transition" title="Edit Trade"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteTrade('${t.id}')" class="text-brandRed hover:text-red-700 transition" title="Hapus Trade"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        }
+
+        function updateDashboard() {
+            const period = document.getElementById('period-filter').value;
+            const now = new Date();
+
+            const userTrades = trades.filter(t => (t.username || 'rio123') === currentUser);
+            const userFundings = fundings.filter(f => (f.username || 'rio123') === currentUser);
+
+            const filteredTrades = userTrades.filter(t => {
+                if (period === 'all') return true;
+                const d = new Date(t.date);
+                if (period === 'daily') return d.toDateString() === now.toDateString();
+                if (period === 'weekly') {
+                    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    return d >= oneWeekAgo;
+                }
+                if (period === 'monthly') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                return true;
+            });
+
+            const filteredFundings = userFundings.filter(f => {
+                if (period === 'all') return true;
+                const d = new Date(f.date);
+                if (period === 'daily') return d.toDateString() === now.toDateString();
+                if (period === 'weekly') {
+                    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    return d >= oneWeekAgo;
+                }
+                if (period === 'monthly') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                return true;
+            });
+
+            let totalPnL = 0;
+            let winningTrades = 0;
+            let totalFees = 0;
+            let grossProfit = 0;
+            let grossLoss = 0;
+            const pnlArray = [];
+
+            const pnlByAsset = {};
+            const pnlByStrategy = {};
+
+            filteredTrades.forEach(t => {
+                totalPnL += t.pnl;
+                totalFees += (t.fee || 0);
+                pnlArray.push(t.pnl);
+
+                if (t.pnl > 0) {
+                    winningTrades++;
+                    grossProfit += t.pnl;
+                } else if (t.pnl < 0) {
+                    grossLoss += Math.abs(t.pnl);
+                }
+
+                pnlByAsset[t.asset] = (pnlByAsset[t.asset] || 0) + t.pnl;
+                pnlByStrategy[t.strategy] = (pnlByStrategy[t.strategy] || 0) + t.pnl;
+            });
+
+            const totalTradesCount = filteredTrades.length;
+            const winRate = totalTradesCount > 0 ? (winningTrades / totalTradesCount) * 100 : 0;
+
+            // Profit Factor Calculation
+            let profitFactor = 0;
+            if (grossLoss === 0) {
+                profitFactor = grossProfit > 0 ? Infinity : 0;
+            } else {
+                profitFactor = grossProfit / grossLoss;
+            }
+
+            // Sharpe Ratio Calculation
+            let sharpeRatio = 0;
+            if (totalTradesCount > 1) {
+                const meanPnL = totalPnL / totalTradesCount;
+                const variance = pnlArray.reduce((acc, val) => acc + Math.pow(val - meanPnL, 2), 0) / (totalTradesCount - 1);
+                const stdDev = Math.sqrt(variance);
+                if (stdDev !== 0) {
+                    sharpeRatio = meanPnL / stdDev;
+                }
+            } else {
+                sharpeRatio = NaN;
+            }
+
+            // Update DOM Stats
+            document.getElementById('stat-pnl').innerText = formatCurrency(totalPnL);
+            document.getElementById('stat-pnl').className = `text-2xl font-extrabold ${totalPnL >= 0 ? 'text-profitGreen' : 'text-brandRed'}`;
+            document.getElementById('stat-winrate').innerText = winRate.toFixed(1) + '%';
+            document.getElementById('stat-trades').innerText = totalTradesCount;
+            document.getElementById('stat-fees').innerText = formatCurrency(totalFees);
+
+            document.getElementById('stat-gross-profit').innerText = formatCurrency(grossProfit);
+            document.getElementById('stat-gross-loss').innerText = formatCurrency(-grossLoss);
+
+            document.getElementById('stat-profit-factor').innerText = profitFactor === Infinity ? '∞' : profitFactor.toFixed(2);
+            document.getElementById('stat-profit-factor').className = `text-2xl font-extrabold ${profitFactor >= 1 ? 'text-profitGreen' : (profitFactor > 0 ? 'text-brandRed' : 'text-gray-800')}`;
+
+            const sharpeText = isNaN(sharpeRatio) ? 'N/A' : sharpeRatio.toFixed(2);
+            document.getElementById('stat-sharpe-ratio').innerText = sharpeText;
+            document.getElementById('stat-sharpe-ratio').className = `text-2xl font-extrabold ${!isNaN(sharpeRatio) && sharpeRatio >= 1 ? 'text-profitGreen' : (!isNaN(sharpeRatio) && sharpeRatio < 0 ? 'text-brandRed' : 'text-gray-800')}`;
+
+            renderCashflowBanner(period, totalPnL);
+
+            // Render Asset Breakdown
+            const assetContainer = document.getElementById('pnl-by-asset');
+            assetContainer.innerHTML = '';
+            const sortedAssets = Object.keys(pnlByAsset).sort((a,b) => pnlByAsset[b] - pnlByAsset[a]);
+            sortedAssets.forEach(asset => {
+                const val = pnlByAsset[asset];
+                const colorClass = val >= 0 ? 'text-profitGreen' : 'text-brandRed';
+                assetContainer.innerHTML += `
+                    <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg text-sm border border-gray-100">
+                        <span class="font-bold text-gray-800">${asset}</span>
+                        <span class="font-bold ${colorClass}">${formatCurrency(val)}</span>
+                    </div>
+                `;
+            });
+            if (sortedAssets.length === 0) assetContainer.innerHTML = '<p class="text-xs text-gray-400 italic">Belum ada data pada periode ini.</p>';
+
+            // Render Strategy Breakdown
+            const stratContainer = document.getElementById('pnl-by-strategy');
+            stratContainer.innerHTML = '';
+            const sortedStrats = Object.keys(pnlByStrategy).sort((a,b) => pnlByStrategy[b] - pnlByStrategy[a]);
+            sortedStrats.forEach(strat => {
+                const val = pnlByStrategy[strat];
+                const colorClass = val >= 0 ? 'text-profitGreen' : 'text-brandRed';
+                stratContainer.innerHTML += `
+                    <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-lg text-sm border border-gray-100">
+                        <span class="font-bold text-gray-800">${strat}</span>
+                        <span class="font-bold ${colorClass}">${formatCurrency(val)}</span>
+                    </div>
+                `;
+            });
+            if (sortedStrats.length === 0) stratContainer.innerHTML = '<p class="text-xs text-gray-400 italic">Belum ada data pada periode ini.</p>';
+
+            renderCharts(filteredTrades, filteredFundings, period);
+        }
+
+        function renderCashflowBanner(period, totalPnL) {
+            const banner = document.getElementById('cashflow-banner');
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            const now = new Date();
+
+            let periodText = '';
+            if (period === 'daily') {
+                periodText = `Harian (${formatDateFull(now)})`;
+            } else if (period === 'weekly') {
+                periodText = `Mingguan (Minggu ini, ${months[now.getMonth()]} ${now.getFullYear()})`;
+            } else if (period === 'monthly') {
+                periodText = `Bulanan (${months[now.getMonth()]} ${now.getFullYear()})`;
+            } else {
+                periodText = `Keseluruhan Waktu`;
+            }
+
+            const isPositive = totalPnL >= 0;
+            const statusTag = isPositive ? 'Positive' : 'Minus';
+            const formattedVal = formatCurrency(Math.abs(totalPnL));
+
+            banner.className = `p-4 sm:p-5 rounded-2xl shadow-sm font-semibold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border ${isPositive ? 'bg-emerald-600 border-emerald-700 text-white' : 'bg-brandRed border-red-700 text-white'}`;
+            banner.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid ${isPositive ? 'fa-circle-arrow-up text-2xl' : 'fa-circle-arrow-down text-2xl'}"></i>
+                    <div>
+                        <div class="text-xs uppercase tracking-wider opacity-80">Ringkasan Cashflow</div>
+                        <div class="text-base sm:text-lg font-bold">Cashflow ${periodText} ${statusTag} ${isPositive ? '+' : '-'}${formattedVal}</div>
+                    </div>
+                </div>
+                <div class="text-xs bg-white/20 px-3 py-1 rounded-full font-bold">
+                    ${isPositive ? 'Keuntungan' : 'Kerugian'}
+                </div>
+            `;
+        }
+
+        function renderCharts(closedTrades, periodFundings, periodStr) {
+            const ctxPnl = document.getElementById('pnlChart').getContext('2d');
+            const ctxEq = document.getElementById('equityChart').getContext('2d');
+
+            if (pnlChartInstance) pnlChartInstance.destroy();
+            if (equityChartInstance) equityChartInstance.destroy();
+
+            // 1. Calculate Base Values before filtered period
+            let basePnL = 0;
+            let baseEq = 0;
+
+            const userTrades = trades.filter(t => (t.username || 'rio123') === currentUser);
+            const userFundings = fundings.filter(f => (f.username || 'rio123') === currentUser);
+
+            if (periodStr !== 'all') {
+                const now = new Date();
+                let cutoffDate = new Date(0);
+                if (periodStr === 'daily') cutoffDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                else if (periodStr === 'weekly') cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                else if (periodStr === 'monthly') cutoffDate = new Date(now.getFullYear(), now.getMonth(), 1);
+
+                userTrades.forEach(t => {
+                    if (new Date(t.date) < cutoffDate) {
+                        basePnL += t.pnl;
+                        baseEq += t.pnl;
+                    }
+                });
+                userFundings.forEach(f => {
+                    if (new Date(f.date) < cutoffDate) {
+                        baseEq += (f.type === 'Deposit' ? f.amount : -f.amount);
+                    }
+                });
+            }
+
+            // 2. Combine Trades and Fundings timeline events
+            const events = [];
+            closedTrades.forEach(t => events.push({ date: new Date(t.date), pnl: t.pnl, eqChange: t.pnl }));
+            periodFundings.forEach(f => {
+                const eqChg = f.type === 'Deposit' ? f.amount : -f.amount;
+                events.push({ date: new Date(f.date), pnl: 0, eqChange: eqChg });
+            });
+
+            // Sort chronologically
+            events.sort((a, b) => a.date - b.date);
+
+            let cumulativePnL = basePnL;
+            let cumulativeEq = baseEq;
+
+            const labels = [];
+            const pnlData = [];
+            const eqData = [];
+
+            if (events.length === 0) {
+                labels.push('Awal Periode');
+                pnlData.push(basePnL);
+                eqData.push(baseEq);
+            } else {
+                let lastDate = new Date(events[0].date);
+                lastDate.setHours(0, 0, 0, 0);
+
+                events.forEach(e => {
+                    const currentDate = new Date(e.date);
+                    const currentDayMidnight = new Date(currentDate);
+                    currentDayMidnight.setHours(0, 0, 0, 0);
+
+                    // Fill dates smoothly
+                    while (true) {
+                        const nextDay = new Date(lastDate);
+                        nextDay.setDate(nextDay.getDate() + 1);
+                        if (nextDay < currentDayMidnight) {
+                            lastDate = nextDay;
+                            labels.push(`${lastDate.getDate()}/${lastDate.getMonth() + 1}`);
+                            pnlData.push(cumulativePnL);
+                            eqData.push(cumulativeEq);
+                        } else {
+                            break;
+                        }
+                    }
+
+                    cumulativePnL += e.pnl;
+                    cumulativeEq += e.eqChange;
+
+                    labels.push(`${currentDate.getDate()}/${currentDate.getMonth() + 1}`);
+                    pnlData.push(cumulativePnL);
+                    eqData.push(cumulativeEq);
+
+                    lastDate = currentDayMidnight;
+                });
+            }
+
+            // Render PnL Chart
+            pnlChartInstance = new Chart(ctxPnl, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Kumulatif PnL ($)',
+                        data: pnlData,
+                        borderColor: '#7DAACB',
+                        backgroundColor: 'rgba(125, 170, 203, 0.15)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: '#7DAACB',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Inter, sans-serif' } } },
+                        x: { grid: { display: false }, ticks: { font: { family: 'Inter, sans-serif' }, maxTicksLimit: 10 } }
+                    }
+                }
+            });
+
+            // Render Equity Chart
+            equityChartInstance = new Chart(ctxEq, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Equity Total ($)',
+                        data: eqData,
+                        borderColor: '#16a34a',
+                        backgroundColor: 'rgba(22, 163, 74, 0.15)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: '#16a34a',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Inter, sans-serif' } } },
+                        x: { grid: { display: false }, ticks: { font: { family: 'Inter, sans-serif' }, maxTicksLimit: 10 } }
+                    }
+                }
+            });
+        }
+
+        function renderFundingTable() {
+            const tbody = document.getElementById('funding-tbody');
+            const emptyState = document.getElementById('funding-empty-state');
+
+            const userFundings = fundings.filter(f => (f.username || 'rio123') === currentUser);
+            userFundings.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            tbody.innerHTML = '';
+
+            if (userFundings.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+
+                userFundings.forEach(f => {
+                    const isDepo = f.type === 'Deposit';
+                    const typeColor = isDepo ? 'text-emerald-600 bg-emerald-50' : 'text-brandRed bg-red-50';
+                    const amountColor = isDepo ? 'text-emerald-600' : 'text-brandRed';
+                    const formattedDate = f.date ? new Date(f.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-amber-50/40 transition-colors border-b border-gray-100 last:border-0';
+                    row.innerHTML = `
+                        <td class="py-3 px-4 font-mono text-xs text-gray-500">${f.id}</td>
+                        <td class="py-3 px-4 text-sm text-gray-600">${formattedDate}</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-1 rounded-md text-xs font-bold ${typeColor}">${f.type}</span>
+                        </td>
+                        <td class="py-3 px-4 text-right font-extrabold text-sm ${amountColor}">
+                            ${isDepo ? '+' : '-'}${formatCurrency(f.amount)}
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <button onclick="deleteFunding('${f.id}')" class="text-brandRed hover:text-red-700 transition" title="Hapus Riwayat">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        }
+
+        function deleteFunding(id) {
+            fundings = fundings.filter(f => f.id !== id);
+            localStorage.setItem('funding_data', JSON.stringify(fundings));
+
+            renderFundingTable();
+            updateDashboard();
+            showMessage('Riwayat dana berhasil dihapus.');
+
+            if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith('http')) {
+                fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'deleteFunding', id: id, username: currentUser })
+                });
+            }
+        }
+
+        function exportToSheets() {
+            const userTrades = trades.filter(t => (t.username || 'rio123') === currentUser);
+
+            if (userTrades.length === 0) {
+                showMessage('Tidak ada data trade untuk diekspor!');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "ID,Tanggal,Nama Aset,Pasar,Strategi,Tipe Posisi,Kuantitas,Profit Input,Satuan,Fee (USD),Net PnL (USD)\n";
+
+            userTrades.forEach(t => {
+                const row = [
+                    t.id,
+                    `"${t.date}"`,
+                    t.asset,
+                    t.market,
+                    `"${t.strategy}"`,
+                    t.type,
+                    t.qty,
+                    t.rawProfit,
+                    t.profitUnit,
+                    t.fee,
+                    t.pnl
+                ].join(",");
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Trading_Tracker_${currentUser}_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showMessage('Data berhasil diekspor ke format CSV / Google Sheets!');
+        }
+
+        window.onload = async function() {
+            checkAuth();
+            document.getElementById('current-date-display').innerText = formatDateFull(new Date());
+
+            // Already logged in this session? Show cached data immediately, then refresh from server.
+            if (currentUser && sessionStorage.getItem('isLoggedIn') === 'true') {
+                renderTable();
+                updateDashboard();
+                renderFundingTable();
+
+                await syncUserData();
+
+                renderTable();
+                updateDashboard();
+                renderFundingTable();
+            }
+        };
+    </script>
+</body>
+</html>
